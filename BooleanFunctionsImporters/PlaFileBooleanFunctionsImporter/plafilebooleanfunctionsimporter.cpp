@@ -81,7 +81,7 @@ std::vector < BooleanFunction > PlaFileBooleanFunctionsImporter::ImportBooleanFu
         }
         else if (splited_data[0] == ".e")
         {
-            if (!lines_count && real_lines_count != lines_count) {
+            if (lines_count && real_lines_count != lines_count) {
                 std::cerr << "PlaFileBinaryFunctionsImporter: Numbers of intervals differs!\n";
             }
             break;
