@@ -18,3 +18,5 @@ HEADERS += \
     BooleanFunctionsExporters/abstractbooleanfunctionsexporter.h \
     BooleanFunctionsImporters/PlaFileBooleanFunctionsImporter/plafilebooleanfunctionsimporter.h \
     BooleanFunctionsImporters/abstractbooleanfunctionsimporter.h
+
+DEFINES += "MAKE_FULL_DEFINED_FUNCTION"

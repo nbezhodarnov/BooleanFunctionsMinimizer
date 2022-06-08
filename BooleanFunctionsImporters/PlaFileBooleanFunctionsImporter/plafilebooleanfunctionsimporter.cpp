@@ -160,7 +160,7 @@ std::vector < BooleanFunction > PlaFileBooleanFunctionsImporter::ImportBooleanFu
         Interval all_intervals = {};
         for (unsigned int j = 0; j < variables.size(); j++)
         {
-            all_intervals.AddUnit({variable, True});
+            all_intervals.AppendUnit({variables[j], AnyValue});
         }
         intervals.insert(intervals.begin(), all_intervals);
         for (unsigned int j = 0; j < values.size(); j++)
