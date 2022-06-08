@@ -124,7 +124,7 @@ bool Interval::IntersectionExists(const Interval &other) const
         }
         bool different_values = units[i].value != other.units[i].value;
         bool contains_any_value = units[i].value == AnyValue || other.units[i].value == AnyValue;
-        if (different_values || !contains_any_value) {
+        if (different_values && !contains_any_value) {
             return false;
         }
     }
