@@ -8,10 +8,8 @@
 int main(int argc, char* argv[])
 {
     if (argc != 4) {
-        if (argc == 2 && std::string(argv[1]) == "-h") {
-            std::cout << "Usage: <input_file> <output_file> <function_index>\n";
-            return 0;
-        }
+        std::cout << "Usage: <input_file> <output_file> <function_index>\n";
+        return 0;
     }
     try {
         AbstractBooleanFunctionsImporter *importer = new PlaFileBooleanFunctionsImporter();
