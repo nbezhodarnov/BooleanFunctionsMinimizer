@@ -56,8 +56,8 @@ std::vector < IntervalWithStatus > BlakeBooleanFunctionMinimizer::ApplyAllAbsorb
         if (conjuction->is_absorbed) {
             continue;
         }
-        for (auto other_conjuction = conjuction + 1; other_conjuction != intervals.end(); other_conjuction++) {
-            if (other_conjuction->is_absorbed) {
+        for (auto other_conjuction = intervals.begin(); other_conjuction != intervals.end(); other_conjuction++) {
+            if (other_conjuction->is_absorbed || other_conjuction == conjuction) {
                 continue;
             }
             if (other_conjuction->interval.Absorbs(conjuction->interval)) {
