@@ -38,7 +38,11 @@ void PlaFileBooleanFunctionsExporter::ExportBooleanFunctions(const std::string &
 
     file << ".ob";
     for (uint64_t i = 0; i < output_variables_count; i++) {
-        file << " o_" << std::to_string(i) << "_";
+        std::string function_name = functions[i].GetName();
+        if (function_name.empty()) {
+            function_name = "o_" + std::to_string(i) + "_";
+        }
+        file << " " << function_name;
     }
     file << "\n";
 

@@ -17,6 +17,7 @@ std::vector < BooleanFunction > PlaFileBooleanFunctionsImporter::ImportBooleanFu
     uint64_t real_lines_count = 0;
 
     std::vector < std::string > variables;
+    std::vector < std::string > functions_names;
 
     std::vector < Interval > intervals;
     std::vector < std::vector < bool > > values;
@@ -68,12 +69,23 @@ std::vector < BooleanFunction > PlaFileBooleanFunctionsImporter::ImportBooleanFu
                 else
                 {
                     values.resize(output_variables_count);
+                    for (unsigned int j = 0; j < output_variables_count; j++)
+                    {
+                        std::string function_name = "o_";
+                        function_name += std::to_string(j);
+                        functions_names.push_back(function_name);
+                    }
                 }
             }
         }
         else if (splited_data[0] == ".ob")
         {
-            continue;
+            functions_names.clear();
+            for (unsigned int j = 0; j < output_variables_count; j++)
+            {
+                std::string function_name = splited_data[1 + j];
+                functions_names.push_back(function_name);
+            }
         }
         else if (splited_data[0] == ".p")
         {
@@ -137,7 +149,7 @@ std::vector < BooleanFunction > PlaFileBooleanFunctionsImporter::ImportBooleanFu
 
     std::vector < BooleanFunction > functions;
     for (uint64_t i = 0; i < output_variables_count; i++) {
-        functions.push_back(GenerateFunctionWithoutContradictions(variables, intervals, values[i]));
+        functions.push_back(GenerateFunctionWithoutContradictions(variables, intervals, values[i], functions_names[i]));
     }
     return functions;
 }
@@ -165,7 +177,7 @@ std::vector < std::string > PlaFileBooleanFunctionsImporter::SplitStringByDeleme
     return result;
 }
 
-BooleanFunction PlaFileBooleanFunctionsImporter::GenerateFunctionWithoutContradictions(const std::vector < std::string > &variables, const std::vector < Interval > &intervals, const std::vector < bool > &values) const
+BooleanFunction PlaFileBooleanFunctionsImporter::GenerateFunctionWithoutContradictions(const std::vector < std::string > &variables, const std::vector < Interval > &intervals, const std::vector < bool > &values, const std::string &name) const
 {
     std::vector < Interval > positive_intervals, negative_intervals;
     for (uint64_t i = 0; i < intervals.size(); i++) {
@@ -229,5 +241,5 @@ BooleanFunction PlaFileBooleanFunctionsImporter::GenerateFunctionWithoutContradi
         }
     }
 
-    return BooleanFunction(variables, positive_intervals, negative_intervals);
+    return BooleanFunction(variables, positive_intervals, negative_intervals, name);
 }

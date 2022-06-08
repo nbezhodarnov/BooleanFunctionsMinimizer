@@ -21,7 +21,7 @@ private:
     std::vector < IntervalWithStatus > ApplyAllAbsorbsFromInterval(const Interval &some_interval, const std::vector < IntervalWithStatus > &unabsorbed_intervals) const;
     bool CouldBeAbsorbed(const Interval &some_interval, const std::vector < IntervalWithStatus > &intervals_with_statuses) const;
     Interval TryToCalculateGeneralizedSum(const Interval &first, const Interval &second) const;
-    BooleanFunction GenerateBooleanFunction(const std::vector < std::string > &variables, const std::vector < IntervalWithStatus > &intervals) const;
+    BooleanFunction GenerateBooleanFunction(const std::vector < std::string > &variables, const std::vector < IntervalWithStatus > &intervals, const std::string &name) const;
 };
 
 #endif // BLAKEBOOLEANFUNCTIONMINIMIZER_H

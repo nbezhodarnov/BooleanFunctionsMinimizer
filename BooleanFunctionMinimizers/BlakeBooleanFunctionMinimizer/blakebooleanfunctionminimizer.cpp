@@ -46,7 +46,7 @@ BooleanFunction BlakeBooleanFunctionMinimizer::Minimize(const BooleanFunction &f
     }
 
     std::vector < std::string > variables = function.GetVariables();
-    return GenerateBooleanFunction(variables, intervals);
+    return GenerateBooleanFunction(variables, intervals, function.GetName());
 }
 
 std::vector < IntervalWithStatus > BlakeBooleanFunctionMinimizer::ApplyAllAbsorbs(const std::vector < IntervalWithStatus > &unabsorbed_intervals) const
@@ -109,7 +109,7 @@ Interval BlakeBooleanFunctionMinimizer::TryToCalculateGeneralizedSum(const Inter
     return result;
 }
 
-BooleanFunction BlakeBooleanFunctionMinimizer::GenerateBooleanFunction(const std::vector < std::string > &variables, const std::vector < IntervalWithStatus > &intervals_with_statuses) const
+BooleanFunction BlakeBooleanFunctionMinimizer::GenerateBooleanFunction(const std::vector < std::string > &variables, const std::vector < IntervalWithStatus > &intervals_with_statuses, const std::string &name) const
 {
     BooleanFunction result(variables);
     for (const IntervalWithStatus &interval_with_status : intervals_with_statuses) {
@@ -118,5 +118,6 @@ BooleanFunction BlakeBooleanFunctionMinimizer::GenerateBooleanFunction(const std
         }
         result.AddInterval(interval_with_status.interval);
     }
+    result.SetName(name);
     return result;
 }

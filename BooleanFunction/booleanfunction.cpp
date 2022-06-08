@@ -262,7 +262,7 @@ bool Interval::operator==(const Interval &other) const
     return units == other.units;
 }
 
-BooleanFunction::BooleanFunction(const std::vector < std::string > &new_variables, const std::vector < Interval > &new_intervals, const std::vector < Interval > &new_negative_intervals)
+BooleanFunction::BooleanFunction(const std::vector < std::string > &new_variables, const std::vector < Interval > &new_intervals, const std::vector < Interval > &new_negative_intervals, const std::string &new_name)
 {
     SetVariables(new_variables);
     for (const Interval &new_interval : new_intervals) {
@@ -271,6 +271,7 @@ BooleanFunction::BooleanFunction(const std::vector < std::string > &new_variable
     for (const Interval &new_interval : new_negative_intervals) {
         AddNegativeInterval(new_interval);
     }
+    name = new_name;
 }
 
 void BooleanFunction::AddInterval(const Interval &new_interval)
@@ -288,6 +289,11 @@ void BooleanFunction::SetVariables(const std::vector<std::string> &new_variables
     UpdateIntervalsVariables(new_variables, intervals);
     UpdateIntervalsVariables(new_variables, negative_intervals);
     variables = new_variables;
+}
+
+void BooleanFunction::SetName(const std::string &new_name)
+{
+    name = new_name;
 }
 
 bool BooleanFunction::Empty() const
@@ -311,6 +317,11 @@ BooleanValue BooleanFunction::GetValue() const
 std::vector < std::string > BooleanFunction::GetVariables() const
 {
     return variables;
+}
+
+std::string BooleanFunction::GetName() const
+{
+    return name;
 }
 
 std::vector < Interval > BooleanFunction::GetIntervals() const
