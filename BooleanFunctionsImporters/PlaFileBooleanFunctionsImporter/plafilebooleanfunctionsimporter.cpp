@@ -32,7 +32,10 @@ std::vector < BooleanFunction > PlaFileBooleanFunctionsImporter::ImportBooleanFu
         std::getline(file, file_data);
         std::vector < std::string > splited_data = SplitStringByDelemeter(file_data, " ");
 
-        if (splited_data[0] == ".i")
+        if (file_data == "") {
+            continue;
+        }
+        else if (splited_data[0] == ".i")
         {
             if (input_variables_count == 0)
             {
