@@ -209,7 +209,7 @@ BooleanFunction PlaFileBooleanFunctionsImporter::GenerateFunctionWithoutContradi
         bool interval_exists = false;
         if (values[i] == true) {
             for (auto positive_interval = positive_intervals.begin(); positive_interval != positive_intervals.end(); positive_interval++) {
-                if (*positive_interval == intervals[i] || positive_interval->Absorbs(intervals[i])) {
+                if (positive_interval->Absorbs(intervals[i])) {
                     interval_exists = true;
                     break;
                 }
@@ -221,7 +221,7 @@ BooleanFunction PlaFileBooleanFunctionsImporter::GenerateFunctionWithoutContradi
 
         interval_exists = false;
         for (auto negative_interval = negative_intervals.begin(); negative_interval != negative_intervals.end(); negative_interval++) {
-            if (*negative_interval == intervals[i]) {
+            if (negative_interval->Absorbs(intervals[i])) {
                 interval_exists = true;
                 break;
             }
@@ -238,6 +238,17 @@ BooleanFunction PlaFileBooleanFunctionsImporter::GenerateFunctionWithoutContradi
                     positive_intervals.insert(positive_intervals.end(), substraction.begin(), substraction.end());
                     positive_intervals.erase(positive_intervals.begin() + j);
                     j--;
+                    for (auto substraction_interval = substraction.begin(); substraction_interval != substraction.end(); substraction_interval++) {
+                        int64_t k = 0;
+                        for (; k < static_cast<int64_t>(positive_intervals.size()); k++) {
+                            if (positive_intervals[k].Absorbs(*substraction_interval)) {
+                                break;
+                            }
+                        }
+                        if (k == static_cast<int64_t>(positive_intervals.size())) {
+                            positive_intervals.push_back(*substraction_interval);
+                        }
+                    }
                 }
             }
             negative_intervals.push_back(interval);
@@ -254,7 +265,17 @@ BooleanFunction PlaFileBooleanFunctionsImporter::GenerateFunctionWithoutContradi
                     }
                 }
             }
-            positive_intervals.insert(positive_intervals.end(), new_intervals.begin(), new_intervals.end());
+            for (auto new_interval = new_intervals.begin(); new_interval != new_intervals.end(); new_interval++) {
+                int64_t k = 0;
+                for (; k < static_cast<int64_t>(positive_intervals.size()); k++) {
+                    if (positive_intervals[k].Absorbs(*new_interval)) {
+                        break;
+                    }
+                }
+                if (k == static_cast<int64_t>(positive_intervals.size())) {
+                    positive_intervals.push_back(*new_interval);
+                }
+            }
         }
     }
 
