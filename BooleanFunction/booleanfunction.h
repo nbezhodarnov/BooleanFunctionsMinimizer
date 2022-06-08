@@ -27,6 +27,7 @@ public:
     void AppendUnit(const IntervalUnit &new_unit);
     void RemoveUnitAt(const unsigned int &index);
     void RemoveUnitByVariableName(const std::string &variable_name);
+    void EditUnitByVariableName(const std::string &variable_name, const BooleanValue &new_value);
 
     std::vector < IntervalUnit > GetUnits() const;
     IntervalUnit GetUnitByVariableName(const std::string &variable) const;
@@ -38,7 +39,7 @@ public:
     static Interval CalculateSum(const Interval &first, const Interval &second);
     static Interval CalculateGeneralizedSum(const Interval &first, const Interval &second);
     static Interval CalculateIntersection(const Interval &first, const Interval &second);
-    static Interval CalculateSubstraction(const Interval &first, const Interval &second);
+    static std::vector < Interval > CalculateSubstraction(const Interval &first, const Interval &second);
 
     bool Empty() const;
     bool operator==(const Interval &other) const;

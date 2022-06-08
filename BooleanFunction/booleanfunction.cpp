@@ -48,7 +48,22 @@ void Interval::RemoveUnitByVariableName(const std::string &variable_name)
                           units.end(),
                           [&](const IntervalUnit &unit)
                           {return unit.variable_name == variable_name;}
-                          ));
+    ));
+}
+
+void Interval::EditUnitByVariableName(const std::string &variable_name, const BooleanValue &new_value)
+{
+    auto unit = std::find_if(
+                    units.begin(),
+                    units.end(),
+                    [&](const IntervalUnit &unit)
+                    {return unit.variable_name == variable_name;}
+    );
+    if (unit != units.end()) {
+        unit->value = new_value;
+    } else {
+        throw std::runtime_error("Interval: Unit with name \"" + variable_name + "\" does not exist!");
+    }
 }
 
 std::vector<IntervalUnit> Interval::GetUnits() const
@@ -213,23 +228,27 @@ Interval Interval::CalculateIntersection(const Interval &first, const Interval &
     return intersection;
 }
 
-Interval Interval::CalculateSubstraction(const Interval &first, const Interval &second)
+std::vector < Interval > Interval::CalculateSubstraction(const Interval &first, const Interval &second)
 {
     if (first == second) {
-        return Interval();
+        return {};
     } else if (first.units.size() != second.units.size()) {
         throw std::runtime_error("Interval: Impossible to calculate substraction for intervals with different dimentions!");
     }
 
     if (first.IsAbsorbed(second)) {
-        return Interval();
+        return {};
     }
 
-    Interval substraction = {};
+    std::vector < Interval > substraction = {};
+    Interval substraction_interval = {};
     for (uint64_t i = 0; i < first.units.size(); i++) {
+        substraction_interval = first;
+
         if (first.units[i].variable_name != second.units[i].variable_name) {
             throw std::runtime_error("Interval: Impossible to calculate substraction for intervals with different variables!");
         }
+
         bool different_values = first.units[i].value != second.units[i].value;
         bool contains_any_value = first.units[i].value == AnyValue || second.units[i].value == AnyValue;
 
@@ -243,10 +262,11 @@ Interval Interval::CalculateSubstraction(const Interval &first, const Interval &
             } else {
                 throw std::runtime_error("Interval: Unknown error while calculating substraction!");
             }
+            substraction_interval.EditUnitByVariableName(first.units[i].variable_name, new_unit.value);
+            substraction.push_back(substraction_interval);
         } else if (different_values) {
-            return first;
+            return {first};
         }
-        substraction.AppendUnit(new_unit);
     }
 
     return substraction;

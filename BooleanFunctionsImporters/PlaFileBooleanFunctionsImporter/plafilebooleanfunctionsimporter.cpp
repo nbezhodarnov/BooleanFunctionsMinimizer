@@ -205,9 +205,6 @@ BooleanFunction PlaFileBooleanFunctionsImporter::GenerateFunctionWithoutContradi
             }
         }
         if (interval_exists) {
-            if (values[i] == true) {
-                negative_interval = negative_intervals.erase(negative_interval);
-            }
             continue;
         }
 
@@ -216,21 +213,23 @@ BooleanFunction PlaFileBooleanFunctionsImporter::GenerateFunctionWithoutContradi
             positive_interval = positive_intervals.begin();
             for (; positive_interval != positive_intervals.end(); positive_interval++) {
                 if (positive_interval->IntersectionExists(interval)) {
-                    *positive_interval = Interval::CalculateSubstraction(*positive_interval, interval);
-                    if (*positive_interval == Interval()) {
-                        positive_interval = positive_intervals.erase(positive_interval);
-                        positive_interval--;
-                    }
+                    std::vector < Interval > substraction = Interval::CalculateSubstraction(*positive_interval, interval);
+                    positive_intervals.insert(positive_intervals.end(), substraction.begin(), substraction.end());
+                    positive_interval = positive_intervals.erase(positive_interval);
+                    positive_interval--;
                 }
             }
             negative_intervals.push_back(interval);
         } else {
+            std::vector < Interval > new_intervals = {interval};
             negative_interval = negative_intervals.begin();
             for (; negative_interval != negative_intervals.end(); negative_interval++) {
-                if (negative_interval->IntersectionExists(interval)) {
-                    interval = Interval::CalculateSubstraction(interval, *negative_interval);
-                    if (interval == Interval()) {
-                        break;
+                for (auto new_interval = new_intervals.begin(); new_interval != new_intervals.end(); new_interval++) {
+                    if (negative_interval->IntersectionExists(*new_interval)) {
+                        std::vector < Interval > substraction = Interval::CalculateSubstraction(*new_interval, *negative_interval);
+                        new_intervals.insert(new_intervals.end(), substraction.begin(), substraction.end());
+                        new_interval = new_intervals.erase(new_interval);
+                        new_interval--;
                     }
                 }
             }
