@@ -250,11 +250,10 @@ std::vector < Interval > Interval::CalculateSubstraction(const Interval &first, 
         }
 
         bool different_values = first.units[i].value != second.units[i].value;
-        bool contains_any_value = first.units[i].value == AnyValue || second.units[i].value == AnyValue;
 
         IntervalUnit new_unit = first.units[i];
-        if (different_values && contains_any_value) {
-            BooleanValue constant_value = first.units[i].value != AnyValue ? first.units[i].value : second.units[i].value;
+        if (different_values && first.units[i].value == AnyValue) {
+            BooleanValue constant_value = second.units[i].value;
             if (constant_value == False) {
                 new_unit.value = True;
             } else if (constant_value == True) {
@@ -264,7 +263,7 @@ std::vector < Interval > Interval::CalculateSubstraction(const Interval &first, 
             }
             substraction_interval.EditUnitByVariableName(first.units[i].variable_name, new_unit.value);
             substraction.push_back(substraction_interval);
-        } else if (different_values) {
+        } else if (different_values && second.units[i].value != AnyValue) {
             return {first};
         }
     }
