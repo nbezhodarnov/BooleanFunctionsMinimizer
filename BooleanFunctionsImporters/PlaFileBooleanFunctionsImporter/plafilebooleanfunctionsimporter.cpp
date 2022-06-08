@@ -22,6 +22,10 @@ std::vector < BooleanFunction > PlaFileBooleanFunctionsImporter::ImportBooleanFu
     std::vector < Interval > intervals;
     std::vector < std::vector < bool > > values;
 
+#ifdef MAKE_FULL_DEFINED_FUNCTION
+    bool must_add_all_intervals = false;
+#endif
+
     while (!file.eof())
     {
         std::string file_data = "";
@@ -142,10 +146,29 @@ std::vector < BooleanFunction > PlaFileBooleanFunctionsImporter::ImportBooleanFu
             for (unsigned int j = 0; j < splited_data[1].size(); j++)
             {
                 values[j].push_back(splited_data[1][j] != '0');
+
+#ifdef MAKE_FULL_DEFINED_FUNCTION
+                must_add_all_intervals = true;
+#endif
             }
         }
     }
     file.close();
+
+#ifdef MAKE_FULL_DEFINED_FUNCTION
+    if (must_add_all_intervals) {
+        Interval all_intervals = {};
+        for (unsigned int j = 0; j < variables.size(); j++)
+        {
+            all_intervals.AddUnit({variable, True});
+        }
+        intervals.insert(intervals.begin(), all_intervals);
+        for (unsigned int j = 0; j < values.size(); j++)
+        {
+            values[j].insert(values[j].begin(), true);
+        }
+    }
+#endif
 
     std::vector < BooleanFunction > functions;
     for (uint64_t i = 0; i < output_variables_count; i++) {
@@ -182,15 +205,16 @@ BooleanFunction PlaFileBooleanFunctionsImporter::GenerateFunctionWithoutContradi
     std::vector < Interval > positive_intervals, negative_intervals;
     for (uint64_t i = 0; i < intervals.size(); i++) {
         bool interval_exists = false;
-        for (auto positive_interval = positive_intervals.begin(); positive_interval != positive_intervals.end(); positive_interval++) {
-            if (*positive_interval == intervals[i]) {
-                interval_exists = true;
-                positive_interval = positive_intervals.erase(positive_interval);
-                break;
+        if (values[i] == true) {
+            for (auto positive_interval = positive_intervals.begin(); positive_interval != positive_intervals.end(); positive_interval++) {
+                if (*positive_interval == intervals[i] || positive_interval->Absorbs(intervals[i])) {
+                    interval_exists = true;
+                    break;
+                }
             }
-        }
-        if (interval_exists) {
-            continue;
+            if (interval_exists) {
+                continue;
+            }
         }
 
         interval_exists = false;
