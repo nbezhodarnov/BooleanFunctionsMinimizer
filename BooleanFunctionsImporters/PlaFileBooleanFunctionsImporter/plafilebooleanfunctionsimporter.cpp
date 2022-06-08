@@ -182,23 +182,19 @@ BooleanFunction PlaFileBooleanFunctionsImporter::GenerateFunctionWithoutContradi
     std::vector < Interval > positive_intervals, negative_intervals;
     for (uint64_t i = 0; i < intervals.size(); i++) {
         bool interval_exists = false;
-        auto positive_interval = positive_intervals.begin();
-        for (; positive_interval != positive_intervals.end(); positive_interval++) {
+        for (auto positive_interval = positive_intervals.begin(); positive_interval != positive_intervals.end(); positive_interval++) {
             if (*positive_interval == intervals[i]) {
                 interval_exists = true;
+                positive_interval = positive_intervals.erase(positive_interval);
                 break;
             }
         }
         if (interval_exists) {
-            if (values[i] == false) {
-                positive_interval = positive_intervals.erase(positive_interval);
-            }
             continue;
         }
 
         interval_exists = false;
-        auto negative_interval = negative_intervals.begin();
-        for (; negative_interval != negative_intervals.end(); negative_interval++) {
+        for (auto negative_interval = negative_intervals.begin(); negative_interval != negative_intervals.end(); negative_interval++) {
             if (*negative_interval == intervals[i]) {
                 interval_exists = true;
                 break;
@@ -210,33 +206,29 @@ BooleanFunction PlaFileBooleanFunctionsImporter::GenerateFunctionWithoutContradi
 
         Interval interval = intervals[i];
         if (values[i] == false) {
-            positive_interval = positive_intervals.begin();
-            for (; positive_interval != positive_intervals.end(); positive_interval++) {
-                if (positive_interval->IntersectionExists(interval)) {
-                    std::vector < Interval > substraction = Interval::CalculateSubstraction(*positive_interval, interval);
+            for (int64_t j = 0; j < static_cast<int64_t>(positive_intervals.size()); j++) {
+                if (positive_intervals[j].IntersectionExists(interval)) {
+                    std::vector < Interval > substraction = Interval::CalculateSubstraction(positive_intervals[j], interval);
                     positive_intervals.insert(positive_intervals.end(), substraction.begin(), substraction.end());
-                    positive_interval = positive_intervals.erase(positive_interval);
-                    positive_interval--;
+                    positive_intervals.erase(positive_intervals.begin() + j);
+                    j--;
                 }
             }
             negative_intervals.push_back(interval);
         } else {
             std::vector < Interval > new_intervals = {interval};
-            negative_interval = negative_intervals.begin();
-            for (; negative_interval != negative_intervals.end(); negative_interval++) {
-                for (auto new_interval = new_intervals.begin(); new_interval != new_intervals.end(); new_interval++) {
-                    if (negative_interval->IntersectionExists(*new_interval)) {
-                        std::vector < Interval > substraction = Interval::CalculateSubstraction(*new_interval, *negative_interval);
+            for (int64_t j = 0; j < static_cast<int64_t>(new_intervals.size()); j++) {
+                for (auto negative_interval = negative_intervals.begin(); negative_interval != negative_intervals.end(); negative_interval++) {
+                    if (negative_interval->IntersectionExists(new_intervals[j])) {
+                        std::vector < Interval > substraction = Interval::CalculateSubstraction(new_intervals[j], *negative_interval);
                         new_intervals.insert(new_intervals.end(), substraction.begin(), substraction.end());
-                        new_interval = new_intervals.erase(new_interval);
-                        new_interval--;
+                        new_intervals.erase(new_intervals.begin() + j);
+                        j--;
+                        break;
                     }
                 }
             }
-            if (interval == Interval()) {
-                continue;
-            }
-            positive_intervals.push_back(interval);
+            positive_intervals.insert(positive_intervals.end(), new_intervals.begin(), new_intervals.end());
         }
     }
 
