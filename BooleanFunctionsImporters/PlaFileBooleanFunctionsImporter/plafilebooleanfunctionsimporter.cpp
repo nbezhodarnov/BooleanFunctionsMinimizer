@@ -148,7 +148,9 @@ std::vector < BooleanFunction > PlaFileBooleanFunctionsImporter::ImportBooleanFu
                 values[j].push_back(splited_data[1][j] != '0');
 
 #ifdef MAKE_FULL_DEFINED_FUNCTION
-                must_add_all_intervals = true;
+                if (splited_data[1][j] == '0') {
+                    must_add_all_intervals = true;
+                }
 #endif
             }
         }
