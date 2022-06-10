@@ -27,6 +27,7 @@ public:
     void AppendUnit(const IntervalUnit &new_unit);
     void RemoveUnitAt(const unsigned int &index);
     void RemoveUnitByVariableName(const std::string &variable_name);
+    void EditUnitByVariableName(const std::string &variable_name, const BooleanValue &new_value);
 
     std::vector < IntervalUnit > GetUnits() const;
     IntervalUnit GetUnitByVariableName(const std::string &variable) const;
@@ -38,7 +39,7 @@ public:
     static Interval CalculateSum(const Interval &first, const Interval &second);
     static Interval CalculateGeneralizedSum(const Interval &first, const Interval &second);
     static Interval CalculateIntersection(const Interval &first, const Interval &second);
-    static Interval CalculateSubstraction(const Interval &first, const Interval &second);
+    static std::vector < Interval > CalculateSubstraction(const Interval &first, const Interval &second);
 
     bool Empty() const;
     bool operator==(const Interval &other) const;
@@ -51,16 +52,18 @@ private:
 class BooleanFunction
 {
 public:
-    BooleanFunction(const std::vector < std::string > &new_variables = {}, const std::vector < Interval > &new_intervals = {}, const std::vector < Interval > &new_negative_intervals = {});
+    BooleanFunction(const std::vector < std::string > &new_variables = {}, const std::vector < Interval > &new_intervals = {}, const std::vector < Interval > &new_negative_intervals = {}, const std::string &new_name = "");
 
     void AddInterval(const Interval &new_interval);
     void AddNegativeInterval(const Interval &new_interval);
     void SetVariables(const std::vector < std::string > &new_variables);
+    void SetName(const std::string &new_name);
 
     bool Empty() const;
 
     BooleanValue GetValue() const;
     std::vector < std::string > GetVariables() const;
+    std::string GetName() const;
     std::vector < Interval > GetIntervals() const;
     std::vector < Interval > GetNegativeIntervals() const;
 
@@ -72,6 +75,7 @@ private:
     std::vector < Interval > intervals;
     std::vector < Interval > negative_intervals;
     std::vector < std::string > variables;
+    std::string name;
 
     void CheckAndAddInterval(const Interval &new_interval, std::vector < Interval > &similar_intervals, const std::vector < Interval > &opposite_intervals);
     void UpdateIntervalsVariables(const std::vector < std::string > &new_variables, std::vector < Interval > &some_intervals);

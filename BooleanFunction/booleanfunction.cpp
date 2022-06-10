@@ -48,7 +48,22 @@ void Interval::RemoveUnitByVariableName(const std::string &variable_name)
                           units.end(),
                           [&](const IntervalUnit &unit)
                           {return unit.variable_name == variable_name;}
-                          ));
+    ));
+}
+
+void Interval::EditUnitByVariableName(const std::string &variable_name, const BooleanValue &new_value)
+{
+    auto unit = std::find_if(
+                    units.begin(),
+                    units.end(),
+                    [&](const IntervalUnit &unit)
+                    {return unit.variable_name == variable_name;}
+    );
+    if (unit != units.end()) {
+        unit->value = new_value;
+    } else {
+        throw std::runtime_error("Interval: Unit with name \"" + variable_name + "\" does not exist!");
+    }
 }
 
 std::vector<IntervalUnit> Interval::GetUnits() const
@@ -109,7 +124,7 @@ bool Interval::IntersectionExists(const Interval &other) const
         }
         bool different_values = units[i].value != other.units[i].value;
         bool contains_any_value = units[i].value == AnyValue || other.units[i].value == AnyValue;
-        if (different_values || !contains_any_value) {
+        if (different_values && !contains_any_value) {
             return false;
         }
     }
@@ -213,29 +228,32 @@ Interval Interval::CalculateIntersection(const Interval &first, const Interval &
     return intersection;
 }
 
-Interval Interval::CalculateSubstraction(const Interval &first, const Interval &second)
+std::vector < Interval > Interval::CalculateSubstraction(const Interval &first, const Interval &second)
 {
     if (first == second) {
-        return Interval();
+        return {};
     } else if (first.units.size() != second.units.size()) {
         throw std::runtime_error("Interval: Impossible to calculate substraction for intervals with different dimentions!");
     }
 
     if (first.IsAbsorbed(second)) {
-        return Interval();
+        return {};
     }
 
-    Interval substraction = {};
+    std::vector < Interval > substraction = {};
+    Interval substraction_interval = {};
     for (uint64_t i = 0; i < first.units.size(); i++) {
+        substraction_interval = first;
+
         if (first.units[i].variable_name != second.units[i].variable_name) {
             throw std::runtime_error("Interval: Impossible to calculate substraction for intervals with different variables!");
         }
+
         bool different_values = first.units[i].value != second.units[i].value;
-        bool contains_any_value = first.units[i].value == AnyValue || second.units[i].value == AnyValue;
 
         IntervalUnit new_unit = first.units[i];
-        if (different_values && contains_any_value) {
-            BooleanValue constant_value = first.units[i].value != AnyValue ? first.units[i].value : second.units[i].value;
+        if (different_values && first.units[i].value == AnyValue) {
+            BooleanValue constant_value = second.units[i].value;
             if (constant_value == False) {
                 new_unit.value = True;
             } else if (constant_value == True) {
@@ -243,10 +261,11 @@ Interval Interval::CalculateSubstraction(const Interval &first, const Interval &
             } else {
                 throw std::runtime_error("Interval: Unknown error while calculating substraction!");
             }
-        } else if (different_values) {
-            return first;
+            substraction_interval.EditUnitByVariableName(first.units[i].variable_name, new_unit.value);
+            substraction.push_back(substraction_interval);
+        } else if (different_values && second.units[i].value != AnyValue) {
+            return {first};
         }
-        substraction.AppendUnit(new_unit);
     }
 
     return substraction;
@@ -262,7 +281,7 @@ bool Interval::operator==(const Interval &other) const
     return units == other.units;
 }
 
-BooleanFunction::BooleanFunction(const std::vector < std::string > &new_variables, const std::vector < Interval > &new_intervals, const std::vector < Interval > &new_negative_intervals)
+BooleanFunction::BooleanFunction(const std::vector < std::string > &new_variables, const std::vector < Interval > &new_intervals, const std::vector < Interval > &new_negative_intervals, const std::string &new_name)
 {
     SetVariables(new_variables);
     for (const Interval &new_interval : new_intervals) {
@@ -271,6 +290,7 @@ BooleanFunction::BooleanFunction(const std::vector < std::string > &new_variable
     for (const Interval &new_interval : new_negative_intervals) {
         AddNegativeInterval(new_interval);
     }
+    name = new_name;
 }
 
 void BooleanFunction::AddInterval(const Interval &new_interval)
@@ -288,6 +308,11 @@ void BooleanFunction::SetVariables(const std::vector<std::string> &new_variables
     UpdateIntervalsVariables(new_variables, intervals);
     UpdateIntervalsVariables(new_variables, negative_intervals);
     variables = new_variables;
+}
+
+void BooleanFunction::SetName(const std::string &new_name)
+{
+    name = new_name;
 }
 
 bool BooleanFunction::Empty() const
@@ -311,6 +336,11 @@ BooleanValue BooleanFunction::GetValue() const
 std::vector < std::string > BooleanFunction::GetVariables() const
 {
     return variables;
+}
+
+std::string BooleanFunction::GetName() const
+{
+    return name;
 }
 
 std::vector < Interval > BooleanFunction::GetIntervals() const

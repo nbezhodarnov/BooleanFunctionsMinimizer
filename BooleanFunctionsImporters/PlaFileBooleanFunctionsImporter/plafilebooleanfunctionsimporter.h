@@ -11,7 +11,7 @@ public:
 
 private:
     std::vector < std::string > SplitStringByDelemeter(const std::string &string, const std::string &delimiter) const;
-    BooleanFunction GenerateFunctionWithoutContradictions(const std::vector < std::string > &variables, const std::vector < Interval > &intervals, const std::vector < bool > &values) const;
+    BooleanFunction GenerateFunctionWithoutContradictions(const std::vector < std::string > &variables, const std::vector < Interval > &intervals, const std::vector < bool > &values, const std::string &name) const;
 };
 
 #endif // PLAFILEBOOLEANFUNCTIONSIMPORTER_H

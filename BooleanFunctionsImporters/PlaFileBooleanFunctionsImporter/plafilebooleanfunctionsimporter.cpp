@@ -17,9 +17,14 @@ std::vector < BooleanFunction > PlaFileBooleanFunctionsImporter::ImportBooleanFu
     uint64_t real_lines_count = 0;
 
     std::vector < std::string > variables;
+    std::vector < std::string > functions_names;
 
     std::vector < Interval > intervals;
     std::vector < std::vector < bool > > values;
+
+#ifdef MAKE_FULL_DEFINED_FUNCTION
+    bool must_add_all_intervals = false;
+#endif
 
     while (!file.eof())
     {
@@ -27,7 +32,10 @@ std::vector < BooleanFunction > PlaFileBooleanFunctionsImporter::ImportBooleanFu
         std::getline(file, file_data);
         std::vector < std::string > splited_data = SplitStringByDelemeter(file_data, " ");
 
-        if (splited_data[0] == ".i")
+        if (file_data == "") {
+            continue;
+        }
+        else if (splited_data[0] == ".i")
         {
             if (input_variables_count == 0)
             {
@@ -68,12 +76,23 @@ std::vector < BooleanFunction > PlaFileBooleanFunctionsImporter::ImportBooleanFu
                 else
                 {
                     values.resize(output_variables_count);
+                    for (unsigned int j = 0; j < output_variables_count; j++)
+                    {
+                        std::string function_name = "o_";
+                        function_name += std::to_string(j);
+                        functions_names.push_back(function_name);
+                    }
                 }
             }
         }
         else if (splited_data[0] == ".ob")
         {
-            continue;
+            functions_names.clear();
+            for (unsigned int j = 0; j < output_variables_count; j++)
+            {
+                std::string function_name = splited_data[1 + j];
+                functions_names.push_back(function_name);
+            }
         }
         else if (splited_data[0] == ".p")
         {
@@ -81,7 +100,7 @@ std::vector < BooleanFunction > PlaFileBooleanFunctionsImporter::ImportBooleanFu
         }
         else if (splited_data[0] == ".e")
         {
-            if (!lines_count && real_lines_count != lines_count) {
+            if (lines_count && real_lines_count != lines_count) {
                 std::cerr << "PlaFileBinaryFunctionsImporter: Numbers of intervals differs!\n";
             }
             break;
@@ -130,14 +149,35 @@ std::vector < BooleanFunction > PlaFileBooleanFunctionsImporter::ImportBooleanFu
             for (unsigned int j = 0; j < splited_data[1].size(); j++)
             {
                 values[j].push_back(splited_data[1][j] != '0');
+
+#ifdef MAKE_FULL_DEFINED_FUNCTION
+                if (splited_data[1][j] == '0') {
+                    must_add_all_intervals = true;
+                }
+#endif
             }
         }
     }
     file.close();
 
+#ifdef MAKE_FULL_DEFINED_FUNCTION
+    if (must_add_all_intervals) {
+        Interval all_intervals = {};
+        for (unsigned int j = 0; j < variables.size(); j++)
+        {
+            all_intervals.AppendUnit({variables[j], AnyValue});
+        }
+        intervals.insert(intervals.begin(), all_intervals);
+        for (unsigned int j = 0; j < values.size(); j++)
+        {
+            values[j].insert(values[j].begin(), true);
+        }
+    }
+#endif
+
     std::vector < BooleanFunction > functions;
     for (uint64_t i = 0; i < output_variables_count; i++) {
-        functions.push_back(GenerateFunctionWithoutContradictions(variables, intervals, values[i]));
+        functions.push_back(GenerateFunctionWithoutContradictions(variables, intervals, values[i], functions_names[i]));
     }
     return functions;
 }
@@ -165,69 +205,82 @@ std::vector < std::string > PlaFileBooleanFunctionsImporter::SplitStringByDeleme
     return result;
 }
 
-BooleanFunction PlaFileBooleanFunctionsImporter::GenerateFunctionWithoutContradictions(const std::vector < std::string > &variables, const std::vector < Interval > &intervals, const std::vector < bool > &values) const
+BooleanFunction PlaFileBooleanFunctionsImporter::GenerateFunctionWithoutContradictions(const std::vector < std::string > &variables, const std::vector < Interval > &intervals, const std::vector < bool > &values, const std::string &name) const
 {
     std::vector < Interval > positive_intervals, negative_intervals;
     for (uint64_t i = 0; i < intervals.size(); i++) {
         bool interval_exists = false;
-        auto positive_interval = positive_intervals.begin();
-        for (; positive_interval != positive_intervals.end(); positive_interval++) {
-            if (*positive_interval == intervals[i]) {
-                interval_exists = true;
-                break;
+        if (values[i] == true) {
+            for (auto positive_interval = positive_intervals.begin(); positive_interval != positive_intervals.end(); positive_interval++) {
+                if (positive_interval->Absorbs(intervals[i])) {
+                    interval_exists = true;
+                    break;
+                }
             }
-        }
-        if (interval_exists) {
-            if (values[i] == false) {
-                positive_interval = positive_intervals.erase(positive_interval);
+            if (interval_exists) {
+                continue;
             }
-            continue;
         }
 
         interval_exists = false;
-        auto negative_interval = negative_intervals.begin();
-        for (; negative_interval != negative_intervals.end(); negative_interval++) {
-            if (*negative_interval == intervals[i]) {
+        for (auto negative_interval = negative_intervals.begin(); negative_interval != negative_intervals.end(); negative_interval++) {
+            if (negative_interval->Absorbs(intervals[i])) {
                 interval_exists = true;
                 break;
             }
         }
         if (interval_exists) {
-            if (values[i] == true) {
-                negative_interval = negative_intervals.erase(negative_interval);
-            }
             continue;
         }
 
         Interval interval = intervals[i];
         if (values[i] == false) {
-            positive_interval = positive_intervals.begin();
-            for (; positive_interval != positive_intervals.end(); positive_interval++) {
-                if (positive_interval->IntersectionExists(interval)) {
-                    *positive_interval = Interval::CalculateSubstraction(*positive_interval, interval);
-                    if (*positive_interval == Interval()) {
-                        positive_interval = positive_intervals.erase(positive_interval);
-                        positive_interval--;
+            for (int64_t j = 0; j < static_cast<int64_t>(positive_intervals.size()); j++) {
+                if (positive_intervals[j].IntersectionExists(interval)) {
+                    std::vector < Interval > substraction = Interval::CalculateSubstraction(positive_intervals[j], interval);
+                    positive_intervals.insert(positive_intervals.end(), substraction.begin(), substraction.end());
+                    positive_intervals.erase(positive_intervals.begin() + j);
+                    j--;
+                    for (auto substraction_interval = substraction.begin(); substraction_interval != substraction.end(); substraction_interval++) {
+                        int64_t k = 0;
+                        for (; k < static_cast<int64_t>(positive_intervals.size()); k++) {
+                            if (positive_intervals[k].Absorbs(*substraction_interval)) {
+                                break;
+                            }
+                        }
+                        if (k == static_cast<int64_t>(positive_intervals.size())) {
+                            positive_intervals.push_back(*substraction_interval);
+                        }
                     }
                 }
             }
             negative_intervals.push_back(interval);
         } else {
-            negative_interval = negative_intervals.begin();
-            for (; negative_interval != negative_intervals.end(); negative_interval++) {
-                if (negative_interval->IntersectionExists(interval)) {
-                    interval = Interval::CalculateSubstraction(interval, *negative_interval);
-                    if (interval == Interval()) {
+            std::vector < Interval > new_intervals = {interval};
+            for (int64_t j = 0; j < static_cast<int64_t>(new_intervals.size()); j++) {
+                for (auto negative_interval = negative_intervals.begin(); negative_interval != negative_intervals.end(); negative_interval++) {
+                    if (negative_interval->IntersectionExists(new_intervals[j])) {
+                        std::vector < Interval > substraction = Interval::CalculateSubstraction(new_intervals[j], *negative_interval);
+                        new_intervals.insert(new_intervals.end(), substraction.begin(), substraction.end());
+                        new_intervals.erase(new_intervals.begin() + j);
+                        j--;
                         break;
                     }
                 }
             }
-            if (interval == Interval()) {
-                continue;
+            for (auto new_interval = new_intervals.begin(); new_interval != new_intervals.end(); new_interval++) {
+                int64_t k = 0;
+                for (; k < static_cast<int64_t>(positive_intervals.size()); k++) {
+                    if (positive_intervals[k].Absorbs(*new_interval)) {
+                        break;
+                    }
+                }
+                if (k == static_cast<int64_t>(positive_intervals.size())) {
+                    positive_intervals.push_back(*new_interval);
+                }
             }
-            positive_intervals.push_back(interval);
         }
     }
 
-    return BooleanFunction(variables, positive_intervals, negative_intervals);
+    return BooleanFunction(variables, positive_intervals, negative_intervals, name);
 }
